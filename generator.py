@@ -1,29 +1,54 @@
 import secrets
 import string
-import sys
+import tkinter as tk
+from tkinter import messagebox
+
+MAX_LENGTH = 256
 
 
 def generate_password(length: int) -> str:
-    alphabet = string.ascii_letters + string.digits + string.punctuation
-    while True:
-        password = "".join(secrets.choice(alphabet) for _ in range(length))
-        has_upper = any(c in string.ascii_uppercase for c in password)
-        has_lower = any(c in string.ascii_lowercase for c in password)
-        has_digit = any(c in string.digits for c in password)
-        has_symbol = any(c in string.punctuation for c in password)
-        if has_upper and has_lower and has_digit and has_symbol:
-            return password
+    upper = secrets.choice(string.ascii_uppercase)
+    lower = secrets.choice(string.ascii_lowercase)
+    digit = secrets.choice(string.digits)
+    symbol = secrets.choice(string.punctuation)
+    rest = (secrets.choice(string.ascii_letters + string.digits + string.punctuation)
+            for _ in range(length - 4))
+    password = list(upper + lower + digit + symbol) + list(rest)
+    secrets.SystemRandom().shuffle(password)
+    return "".join(password)
 
 
-def main():
-    if len(sys.argv) != 2 or not sys.argv[1].isdigit() or int(sys.argv[1]) < 4:
-        print("Usage: python generator.py <length>")
-        print("Password length must be a number >= 4.")
-        sys.exit(1)
+def on_generate():
+    raw = entry.get().strip()
+    if not raw.isdigit():
+        messagebox.showerror("Invalid Input", "Please enter a number.")
+        return
+    length = int(raw)
+    if length < 4:
+        messagebox.showerror("Invalid Input", "Password length must be >= 4.")
+        return
+    if length > MAX_LENGTH:
+        messagebox.showerror("Invalid Input", f"Password length must be <= {MAX_LENGTH}.")
+        return
+    result.set(generate_password(length))
 
-    length = int(sys.argv[1])
-    print(f"Generated password: {generate_password(length)}")
 
+root = tk.Tk()
+root.title("Password Generator")
+root.resizable(False, False)
 
-if __name__ == "__main__":
-    main()
+tk.Label(root, text="Password length:").pack(padx=10, pady=(10, 0))
+
+entry = tk.Entry(root)
+entry.pack(padx=10, pady=5)
+entry.bind("<Return>", lambda e: on_generate())
+entry.focus_set()
+
+tk.Button(root, text="Generate", command=on_generate).pack(padx=10, pady=5)
+
+result = tk.StringVar()
+output = tk.Entry(root, textvariable=result, width=40)
+output.pack(padx=10, pady=(5, 10))
+output.config(state="readonly")
+
+root.mainloop()
